@@ -5,7 +5,7 @@ import torch
 
 # SETTINGS 
 gpu_accel = True
-model_path = 'models/yolov8l.pt'
+model_path = 'models/yolov8n.pt'
 print_verbose_info = False
 minimum_confidence = 0.45
 
@@ -17,7 +17,7 @@ model = YOLO(model_path,task='detect') #pytorch weights almost 30 fps
 
 
 def pred(img):
-    results = model.predict(img,verbose=print_verbose_info,device=0,show=False,save=False)
+    results = model.predict(img,verbose=print_verbose_info,device="cpu",show=False,save=False)
     result = results[0]
     box = result.boxes
     # capture screen and pass it thru mode 

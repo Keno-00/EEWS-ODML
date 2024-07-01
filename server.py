@@ -1,13 +1,14 @@
 import socket
 import threading
 import cv2
+import struct
 import dearpygui.dearpygui as dpg
 import numpy as np
 import time
-import ainew
+import ai_1
 
 class ImageReceiver:
-    def __init__(self, host, port):
+    def __init__(self, host, port, mode):
         self.host = host
         self.port = port
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,6 +17,9 @@ class ImageReceiver:
         self.is_running = False
         self.conn = None
         self.addr = None
+        self.mode = mode
+        ai_1.set_mode(self.mode)
+        print(self.mode)
 
     def start(self):
         self.gui_thread = threading.Thread(target=self.setup_gui, daemon=True)
@@ -24,8 +28,7 @@ class ImageReceiver:
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
         self.is_running = True
-
-
+       
         self.connect()
         self.status("Server started. Waiting for connection...")
 
@@ -34,7 +37,10 @@ class ImageReceiver:
         with dpg.texture_registry():
             dpg.add_raw_texture(640, 480, np.zeros((480, 640, 3), dtype=np.float32), tag="texture_tag", format=dpg.mvFormat_Float_rgb)
         with dpg.window(tag="Primary Window", label="Server Camera Feed"):
-            dpg.add_text("Camera feed", tag="Top_Text_1", show=True)
+            if self.mode == 0:
+                dpg.add_text("Residential Mode", tag="Top_Text_1", show=True)
+            elif self.mode ==1: 
+                dpg.add_text("Commercial Mode", tag="Top_Text_1", show=True)
             dpg.add_image("texture_tag")
             dpg.add_text("INFO\nNo Detection", tag="Bottom_Text_1", show=True)
             dpg.add_text("LAST DETECTION\nNo Detection", tag="Bottom_Text_2", show=True)
@@ -89,7 +95,7 @@ class ImageReceiver:
                 image_data = connection.read(image_len)
                 frame = cv2.imdecode(np.frombuffer(image_data, dtype=np.uint8), 1)
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                detection = ainew.pred_multiple(frame_rgb)
+                detection = ai_1.pred(frame_rgb)
                 detected_classes = set()
     
                 if detection:
@@ -137,5 +143,5 @@ class ImageReceiver:
         self.connect()
 
 if __name__ == "__main__":
-    receiver = ImageReceiver(host='0.0.0.0', port=8000)  # Listen on all available IP addresses on port 8000
+    receiver = ImageReceiver(host='0.0.0.0', port=8000, mode=0)  # Listen on all available IP addresses on port 8000
     receiver.start()
